@@ -37,6 +37,7 @@ import { charts, STRATA_COLORS } from '../theme/colors';
 interface BaselineSummaryTableProps {
   selectedStrata: string[];
   onStrataChange: (next: string[]) => void;
+  disabled?: boolean;
 }
 
 interface EndpointStats {
@@ -186,6 +187,7 @@ function CollapsibleSection({
 export default function BaselineSummaryTable({
   selectedStrata,
   onStrataChange,
+  disabled,
 }: BaselineSummaryTableProps) {
   const allEndpointKeys = Object.keys(ENDPOINTS);
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>(allEndpointKeys);
@@ -260,6 +262,7 @@ export default function BaselineSummaryTable({
             </InputLabel>
             <Select
               multiple
+              disabled={disabled}
               value={selectedEndpoints}
               label="Endpoints"
               onChange={handleEndpointChange}
@@ -289,7 +292,7 @@ export default function BaselineSummaryTable({
               ))}
             </Select>
           </FormControl>
-          <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} />
+          <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
         </Stack>
       </Stack>
 

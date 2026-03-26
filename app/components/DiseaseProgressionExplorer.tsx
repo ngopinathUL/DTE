@@ -12,9 +12,26 @@ import {
   STRATA,
 } from '../data/digitalTwinData';
 
-export default function DiseaseProgressionExplorer() {
+interface Props {
+  /** When set, overrides and locks chart/table controls */
+  lockedEndpoint?: string | null;
+  lockedChartStrata?: string[] | null;
+  lockedTableStrata?: string[] | null;
+}
+
+export default function DiseaseProgressionExplorer({
+  lockedEndpoint,
+  lockedChartStrata,
+  lockedTableStrata,
+}: Props) {
   const [chartStrata, setChartStrata] = useState<string[]>([...STRATA]);
   const [tableStrata, setTableStrata] = useState<string[]>([...STRATA]);
+
+  const isLocked = lockedEndpoint != null;
+
+  // When locked, override local state
+  const effectiveChartStrata = isLocked && lockedChartStrata ? lockedChartStrata : chartStrata;
+  const effectiveTableStrata = isLocked && lockedTableStrata ? lockedTableStrata : tableStrata;
 
   return (
     <Box>
@@ -33,20 +50,20 @@ export default function DiseaseProgressionExplorer() {
         prediction band.
       </Typography>
 
-      {/* Chart (top) */}
       <ProgressionChart
         subjectIds={SUBJECT_IDS}
-        selectedStrata={chartStrata}
-        onStrataChange={setChartStrata}
+        selectedStrata={effectiveChartStrata}
+        onStrataChange={isLocked ? () => {} : setChartStrata}
+        lockedEndpoint={lockedEndpoint || undefined}
+        disabled={isLocked}
       />
 
-      {/* Table (bottom) */}
       <BaselineSummaryTable
-        selectedStrata={tableStrata}
-        onStrataChange={setTableStrata}
+        selectedStrata={effectiveTableStrata}
+        onStrataChange={isLocked ? () => {} : setTableStrata}
+        disabled={isLocked}
       />
 
-      {/* Footer */}
       <Typography
         sx={{
           textAlign: 'right',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -19,16 +19,34 @@ import Sidebar, { SIDEBAR_WIDTH } from './Sidebar';
 import StudyOverview from './StudyOverview';
 import DiseaseProgressionExplorer from './DiseaseProgressionExplorer';
 import DocumentsTab from './DocumentsTab';
+import InsightsPanel from './InsightsPanel';
+import { Insight } from '../data/insights';
 
 export default function StudyPage() {
   const [activeTab, setActiveTab] = useState(0);
+  const [activeInsightId, setActiveInsightId] = useState<string | null>(null);
+  const [lockedEndpoint, setLockedEndpoint] = useState<string | null>(null);
+  const [lockedChartStrata, setLockedChartStrata] = useState<string[] | null>(null);
+  const [lockedTableStrata, setLockedTableStrata] = useState<string[] | null>(null);
+
+  const handleActivateInsight = useCallback((insight: Insight) => {
+    setActiveInsightId(insight.id);
+    setLockedEndpoint(insight.binding.endpoint);
+    setLockedChartStrata(insight.binding.chartStrata);
+    setLockedTableStrata(insight.binding.tableStrata);
+  }, []);
+
+  const handleDeactivateInsight = useCallback(() => {
+    setActiveInsightId(null);
+    setLockedEndpoint(null);
+    setLockedChartStrata(null);
+    setLockedTableStrata(null);
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#FAF9F7' }}>
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main content area */}
       <Box sx={{ ml: `${SIDEBAR_WIDTH}px`, flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Top bar */}
         <Box
@@ -43,30 +61,23 @@ export default function StudyPage() {
           }}
         >
           <Breadcrumbs separator={<NavigateNextIcon fontSize="small" sx={{ color: '#bbb' }} />}>
-            <Link
-              underline="hover"
-              sx={{ fontSize: 13, color: '#666', fontFamily: 'Roboto Flex, sans-serif', cursor: 'pointer' }}
-            >
+            <Link underline="hover" sx={{ fontSize: 13, color: '#666', fontFamily: 'Roboto Flex, sans-serif', cursor: 'pointer' }}>
               Home
             </Link>
-            <Link
-              underline="hover"
-              sx={{ fontSize: 13, color: '#666', fontFamily: 'Roboto Flex, sans-serif', cursor: 'pointer' }}
-            >
+            <Link underline="hover" sx={{ fontSize: 13, color: '#666', fontFamily: 'Roboto Flex, sans-serif', cursor: 'pointer' }}>
               Studies
             </Link>
             <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#262626', fontFamily: 'Roboto Flex, sans-serif' }}>
               UnlearnAI 2026-1
             </Typography>
           </Breadcrumbs>
-
           <Avatar sx={{ width: 32, height: 32, bgcolor: '#9A56FB', fontSize: 13, fontWeight: 600 }}>NG</Avatar>
         </Box>
 
-        {/* Study header + content wrapper */}
-        <Box sx={{ display: 'flex', flex: 1 }}>
-          {/* Left: study header + tabs + content */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+        {/* Study header + content */}
+        <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Main column */}
+          <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             {/* Study header */}
             <Box sx={{ px: 4, pt: 3, pb: 0, bgcolor: '#fff' }}>
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
@@ -83,27 +94,21 @@ export default function StudyPage() {
                     Digital Twin Explorer Demo Study
                   </Typography>
                 </div>
-
                 <Stack direction="row" spacing={2}>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ cursor: 'pointer', color: '#9A56FB' }}>
                     <CheckCircleOutlineIcon sx={{ fontSize: 18 }} />
-                    <Typography sx={{ fontSize: 13, fontWeight: 500, fontFamily: 'Roboto Flex, sans-serif' }}>
-                      Mark Study as Complete
-                    </Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 500, fontFamily: 'Roboto Flex, sans-serif' }}>Mark Study as Complete</Typography>
                   </Stack>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ cursor: 'pointer', color: '#666' }}>
                     <EditIcon sx={{ fontSize: 16 }} />
-                    <Typography sx={{ fontSize: 13, fontWeight: 500, fontFamily: 'Roboto Flex, sans-serif' }}>
-                      Edit Study
-                    </Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 500, fontFamily: 'Roboto Flex, sans-serif' }}>Edit Study</Typography>
                   </Stack>
                 </Stack>
               </Stack>
 
-              {/* Tabs */}
               <Tabs
                 value={activeTab}
-                onChange={(_, v) => setActiveTab(v)}
+                onChange={(_, v) => { setActiveTab(v); handleDeactivateInsight(); }}
                 sx={{
                   mt: 2,
                   minHeight: 40,
@@ -125,17 +130,34 @@ export default function StudyPage() {
               </Tabs>
             </Box>
 
-            {/* Tab content */}
-            <Box sx={{ px: 4, py: 3 }}>
-              {activeTab === 0 && <DiseaseProgressionExplorer />}
-              {activeTab === 1 && <DocumentsTab />}
+            {/* Scrollable content */}
+            <Box sx={{ flex: 1, overflow: 'auto', px: 4, py: 3 }}>
+              {activeTab === 0 && (
+                <DiseaseProgressionExplorer
+                  lockedEndpoint={lockedEndpoint}
+                  lockedChartStrata={lockedChartStrata}
+                  lockedTableStrata={lockedTableStrata}
+                />
+              )}
+              {activeTab === 1 && (
+                <Stack direction="row" spacing={0}>
+                  <Box sx={{ flex: 1 }}>
+                    <DocumentsTab />
+                  </Box>
+                  <StudyOverview />
+                </Stack>
+              )}
             </Box>
           </Box>
 
-          {/* Right: study overview */}
-          <Box sx={{ bgcolor: '#fff', borderLeft: '1px solid #E8E5E0', pt: 3, pr: 3 }}>
-            <StudyOverview />
-          </Box>
+          {/* Right panel: Insights for DTE tab */}
+          {activeTab === 0 && (
+            <InsightsPanel
+              activeInsightId={activeInsightId}
+              onActivate={handleActivateInsight}
+              onDeactivate={handleDeactivateInsight}
+            />
+          )}
         </Box>
       </Box>
     </Box>

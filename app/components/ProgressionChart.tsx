@@ -37,6 +37,8 @@ interface ProgressionChartProps {
   subjectIds: string[];
   selectedStrata: string[];
   onStrataChange: (next: string[]) => void;
+  lockedEndpoint?: string;
+  disabled?: boolean;
 }
 
 function getSubjectStrata(subjectId: string): string {
@@ -127,8 +129,11 @@ export default function ProgressionChart({
   subjectIds,
   selectedStrata,
   onStrataChange,
+  lockedEndpoint,
+  disabled,
 }: ProgressionChartProps) {
-  const [endpoint, setEndpoint] = useState<string>('cuhdrs');
+  const [internalEndpoint, setInternalEndpoint] = useState<string>('cuhdrs');
+  const endpoint = lockedEndpoint || internalEndpoint;
   const [selectedTwin, setSelectedTwin] = useState<string | null>(null);
 
   const filteredIds = useMemo(() => {
@@ -325,7 +330,8 @@ export default function ProgressionChart({
             <Select
               value={endpoint}
               label="Endpoint"
-              onChange={(e: SelectChangeEvent) => setEndpoint(e.target.value)}
+              disabled={disabled}
+              onChange={(e: SelectChangeEvent) => setInternalEndpoint(e.target.value)}
               sx={{ bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 14 }}
             >
               {Object.entries(ENDPOINTS).map(([key, label]) => (
@@ -333,7 +339,7 @@ export default function ProgressionChart({
               ))}
             </Select>
           </FormControl>
-          <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} />
+          <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
         </Stack>
       </Stack>
 
