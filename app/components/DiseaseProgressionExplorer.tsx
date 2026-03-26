@@ -11,6 +11,7 @@ import {
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
+import BaselineSummaryTable from './BaselineSummaryTable';
 import ProgressionChart from './ProgressionChart';
 import {
   ENDPOINTS,
@@ -24,10 +25,6 @@ export default function DiseaseProgressionExplorer() {
   const [strataFilter, setStrataFilter] = useState<string>('All');
 
   const strataOptions = useMemo(() => ['All', ...STRATA], []);
-
-  // Split subjects: left panel shows first half, right shows all
-  const halfIdx = Math.ceil(SUBJECT_IDS.length / 2);
-  const smallCohort = useMemo(() => SUBJECT_IDS.slice(0, halfIdx), [halfIdx]);
 
   return (
     <Box
@@ -123,25 +120,15 @@ export default function DiseaseProgressionExplorer() {
         </FormControl>
       </Stack>
 
-      {/* Two-panel chart layout */}
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={3}
-        sx={{ mb: 4 }}
-      >
-        <ProgressionChart
-          subtitle="Small cohort &mdash; individual spread visible"
-          endpoint={endpoint}
-          subjectIds={smallCohort}
-          strataFilter={strataFilter}
-        />
-        <ProgressionChart
-          subtitle="Full cohort &mdash; population shape emerges"
-          endpoint={endpoint}
-          subjectIds={SUBJECT_IDS}
-          strataFilter={strataFilter}
-        />
-      </Stack>
+      {/* Baseline Summary Table */}
+      <BaselineSummaryTable strataFilter={strataFilter} />
+
+      {/* Single chart */}
+      <ProgressionChart
+        endpoint={endpoint}
+        subjectIds={SUBJECT_IDS}
+        strataFilter={strataFilter}
+      />
 
       {/* Footer */}
       <Typography
@@ -149,6 +136,7 @@ export default function DiseaseProgressionExplorer() {
           textAlign: 'right',
           fontSize: 13,
           color: '#bbb',
+          mt: 3,
           fontFamily: 'Roboto Flex, sans-serif',
         }}
       >

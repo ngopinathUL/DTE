@@ -29,7 +29,6 @@ import {
 } from '../theme/colors';
 
 interface ProgressionChartProps {
-  subtitle: string;
   endpoint: string;
   subjectIds: string[];
   strataFilter: string;
@@ -125,7 +124,6 @@ function LegendItem({
 }
 
 export default function ProgressionChart({
-  subtitle,
   endpoint,
   subjectIds,
   strataFilter,
@@ -170,7 +168,7 @@ export default function ProgressionChart({
     // Population SD band
     series.push({
       type: 'arearange',
-      name: 'Population \u00b1 SD',
+      name: 'Population ± SD',
       data: popBand,
       color: POPULATION_BAND_COLOR,
       fillOpacity: 1,
@@ -184,7 +182,7 @@ export default function ProgressionChart({
     if (selectedTwin && selectedBand) {
       series.push({
         type: 'arearange',
-        name: `${selectedTwin} \u00b1 SD`,
+        name: `${selectedTwin} ± SD`,
         data: selectedBand,
         color: SELECTED_BAND_COLOR,
         fillOpacity: 1,
@@ -376,31 +374,21 @@ export default function ProgressionChart({
         bgcolor: charts.backgroundColorInCard,
       }}
     >
-      <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
-        {filteredIds.length} twins
-      </Typography>
-      <Typography
-        sx={{
-          fontSize: 13,
-          color: '#888',
-          mb: 1.5,
-          fontFamily: 'Roboto Flex, sans-serif',
-        }}
-      >
-        {subtitle}
+      <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626', mb: 1.5 }}>
+        {filteredIds.length} twins &mdash; Disease progression
       </Typography>
 
       <Stack direction="row" spacing={2.5} sx={{ mb: 1, flexWrap: 'wrap' }}>
         <LegendItem
           color={POPULATION_COLOR}
           fill={POPULATION_BAND_COLOR}
-          label="Population \u00b1 SD"
+          label="Population ± SD"
         />
         <LegendItem color={TWIN_LINE_COLOR} isDash label="Individual twin" />
         <LegendItem
           color={SELECTED_COLOR}
           fill={SELECTED_BAND_COLOR}
-          label="Selected \u00b1 SD"
+          label="Selected ± SD"
         />
       </Stack>
 
