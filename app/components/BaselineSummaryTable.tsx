@@ -246,7 +246,7 @@ export default function BaselineSummaryTable({
       >
         <div>
           <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
-            Baseline summary statistics
+            Summary statistics
           </Typography>
           <Typography
             sx={{ fontSize: 13, color: '#888', pt: 0.5, fontFamily: 'Roboto Flex, sans-serif' }}
