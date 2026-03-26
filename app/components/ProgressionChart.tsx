@@ -20,8 +20,6 @@ import {
   charts,
   POPULATION_COLOR,
   POPULATION_BAND_COLOR,
-  SELECTED_COLOR,
-  SELECTED_BAND_COLOR,
   TWIN_LINE_FADED,
   STRATA_COLORS,
 } from '../theme/colors';
@@ -190,21 +188,25 @@ export default function ProgressionChart({
       zIndex: 0,
     });
 
-    // Determine which IDs to render (all, or only highlighted if toggle is on)
-    const visibleIds = (showOnlySelected && hasHighlights)
-      ? filteredIds.filter((id) => highlighted.has(id))
-      : filteredIds;
+    // In focused mode, non-highlighted twins become near-invisible hairlines (not hidden)
+    const isFocused = showOnlySelected && hasHighlights;
 
     // Per-twin prediction bands
-    visibleIds.forEach((id) => {
+    filteredIds.forEach((id) => {
       const isHighlighted = highlighted.has(id);
       const strata = getSubjectStrata(id);
       const strataBand = STRATA_COLORS[strata]?.band || 'rgba(196, 181, 168, 0.15)';
-      const bandColor = isHighlighted
-        ? strataBand.replace(/[\d.]+\)$/, '0.35)')
-        : hasHighlights
-          ? 'rgba(200, 200, 200, 0.06)'
-          : strataBand;
+
+      let bandColor: string;
+      if (isHighlighted) {
+        bandColor = strataBand.replace(/[\d.]+\)$/, '0.35)');
+      } else if (isFocused) {
+        bandColor = 'rgba(200, 200, 200, 0.02)'; // near-invisible in focused mode
+      } else if (hasHighlights) {
+        bandColor = 'rgba(200, 200, 200, 0.06)';
+      } else {
+        bandColor = strataBand;
+      }
 
       if (twinBands[id]) {
         series.push({
@@ -221,27 +223,49 @@ export default function ProgressionChart({
       }
     });
 
-    visibleIds.forEach((id) => {
+    // Twin lines
+    filteredIds.forEach((id) => {
       const isHighlighted = highlighted.has(id);
       const strata = getSubjectStrata(id);
       const strataColor = STRATA_COLORS[strata]?.line || '#C4B5A8';
+
+      // Non-highlighted lines: not interactive when highlights exist (no tooltip noise)
+      const isBackground = hasHighlights && !isHighlighted;
+
+      let lineColor: string;
+      let lineWidth: number;
+      if (isHighlighted) {
+        lineColor = strataColor;
+        lineWidth = 3;
+      } else if (isFocused) {
+        lineColor = 'rgba(210, 210, 210, 0.25)'; // hairline in focused mode
+        lineWidth = 0.7;
+      } else if (hasHighlights) {
+        lineColor = TWIN_LINE_FADED;
+        lineWidth = 1;
+      } else {
+        lineColor = strataColor;
+        lineWidth = 1.2;
+      }
 
       series.push({
         type: 'line',
         name: id,
         data: twinSeries[id],
-        color: isHighlighted ? strataColor : hasHighlights ? TWIN_LINE_FADED : strataColor,
-        lineWidth: isHighlighted ? 3 : 1.2,
+        color: lineColor,
+        lineWidth,
         marker: {
           enabled: isHighlighted,
+          symbol: 'circle',
           radius: isHighlighted ? 5 : 0,
           fillColor: isHighlighted ? strataColor : undefined,
           lineColor: '#fff',
           lineWidth: isHighlighted ? 2 : 0,
         },
-        states: { hover: { lineWidth: 2.5, lineWidthPlus: 0 } },
-        zIndex: isHighlighted ? 4 : 2,
-        cursor: 'pointer',
+        enableMouseTracking: !isBackground, // disable hover on faded lines
+        states: { hover: { lineWidth: isBackground ? lineWidth : 2.5, lineWidthPlus: 0 } },
+        zIndex: isHighlighted ? 4 : isFocused ? 0 : 2,
+        cursor: isBackground ? 'default' : 'pointer',
         custom: { strata },
         point: {
           events: {
@@ -253,9 +277,6 @@ export default function ProgressionChart({
               }
             },
           },
-        },
-        events: {
-          mouseOver: function () {},
         },
       });
     });
@@ -319,20 +340,40 @@ export default function ProgressionChart({
           const day = point.x;
           const label = dayToMonthLabel(day);
           const popPt = popMean.find((p) => p[0] === day);
-          const strata = point.series.options.custom?.strata;
-          const strataColor = strata ? STRATA_COLORS[strata]?.line : SELECTED_COLOR;
+
           let html = `<div style="border-left: 8px solid #A98EF9; padding: 8px 12px;">`;
           html += `<div style="font-weight:600;color:#262626;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #E8E8E8">${label}</div>`;
+
+          // Always show population avg
           if (popPt) {
             html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">`;
-            html += `<span style="width:10px;height:10px;background:${POPULATION_BAND_COLOR};border:2px solid ${POPULATION_COLOR};display:inline-block"></span>`;
+            html += `<span style="width:10px;height:10px;background:${POPULATION_BAND_COLOR};border:2px solid ${POPULATION_COLOR};display:inline-block;border-radius:1px"></span>`;
             html += `Population avg: ${popPt[1].toFixed(2)}</div>`;
           }
+
+          // Show the hovered subject
           if (point.series.name.startsWith('SUBJ-')) {
-            html += `<div style="display:flex;align-items:center;gap:6px">`;
-            html += `<span style="width:10px;height:10px;background:${STRATA_COLORS[strata || '']?.band || SELECTED_BAND_COLOR};border:2px solid ${strataColor};display:inline-block"></span>`;
-            html += `${point.series.name}${strata ? ` (${strata})` : ''}: ${point.y.toFixed(2)}</div>`;
+            const strata = point.series.options.custom?.strata;
+            const sc = strata ? STRATA_COLORS[strata]?.line : '#666';
+            html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">`;
+            html += `<span style="width:10px;height:10px;background:${STRATA_COLORS[strata || '']?.band || '#eee'};border:2px solid ${sc};display:inline-block;border-radius:50%"></span>`;
+            html += `<b>${point.series.name}</b>${strata ? ` (${strata})` : ''}: ${point.y.toFixed(2)}</div>`;
           }
+
+          // Also show all other highlighted subjects at this timepoint
+          if (hasHighlights) {
+            [...highlighted].forEach((hId) => {
+              if (hId === point.series.name) return; // already shown above
+              const hPt = twinSeries[hId]?.find((p) => p[0] === day);
+              if (!hPt) return;
+              const hStrata = getSubjectStrata(hId);
+              const hColor = STRATA_COLORS[hStrata]?.line || '#666';
+              html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">`;
+              html += `<span style="width:10px;height:10px;background:${STRATA_COLORS[hStrata]?.band || '#eee'};border:2px solid ${hColor};display:inline-block;border-radius:50%"></span>`;
+              html += `${hId} (${hStrata}): ${hPt[1].toFixed(2)}</div>`;
+            });
+          }
+
           html += `</div>`;
           return html;
         },
@@ -450,8 +491,8 @@ export default function ProgressionChart({
               },
             }}
           >
-            <ToggleButton value="all">Show all</ToggleButton>
-            <ToggleButton value="only">Selected only</ToggleButton>
+            <ToggleButton value="all">Context</ToggleButton>
+            <ToggleButton value="only">Focused</ToggleButton>
           </ToggleButtonGroup>
         )}
       </Stack>
