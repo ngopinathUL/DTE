@@ -267,7 +267,7 @@ export default function ProgressionChart({
         gridLineWidth: 0,
       },
       yAxis: {
-        title: { text: 'Change from baseline', style: { color: '#262626', fontSize: '14px', fontFamily: 'Roboto Flex, sans-serif' } },
+        title: { text: `Change from baseline (${ENDPOINTS[endpoint]})`, style: { color: '#262626', fontSize: '14px', fontFamily: 'Roboto Flex, sans-serif' } },
         labels: { style: { color: '#666', fontSize: '12px', fontFamily: 'Roboto Mono, monospace', fontWeight: '500' } },
         gridLineColor: charts.gridLineColor,
         lineColor: charts.axisLineColor,
@@ -320,7 +320,7 @@ export default function ProgressionChart({
         sx={{ mb: 2 }}
       >
         <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
-          {filteredIds.length} twins &mdash; Disease progression
+          Disease progression
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
           <FormControl size="small" sx={{ minWidth: 180 }}>
