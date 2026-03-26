@@ -45,6 +45,7 @@ function InsightCard({
         borderRadius: 2,
         p: 2,
         mb: 1.5,
+        overflow: 'hidden',
         bgcolor: isActive ? '#fff' : '#FAFAF8',
         opacity: isActive ? 1 : 0.55,
         transition: 'all 0.25s ease',
@@ -56,8 +57,8 @@ function InsightCard({
       onClick={isGreyed ? onActivate : undefined}
     >
       {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexWrap: 'wrap', gap: 0.5, flex: 1, minWidth: 0 }}>
           <Chip
             icon={tag.icon as React.ReactElement}
             label={tag.label}
@@ -74,22 +75,24 @@ function InsightCard({
           />
           {isActive && (
             <Chip
-              icon={<LockIcon sx={{ fontSize: 12 }} />}
+              icon={<LockIcon sx={{ fontSize: 11 }} />}
               label={ENDPOINTS[insight.binding.endpoint]}
               size="small"
               sx={{
-                height: 22,
+                height: 20,
                 fontSize: 10,
                 fontFamily: 'Roboto Mono, monospace',
                 bgcolor: '#F2F0EB',
                 color: '#666',
-                '& .MuiChip-icon': { color: '#999', fontSize: 12 },
+                maxWidth: 160,
+                '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+                '& .MuiChip-icon': { color: '#999', fontSize: 11 },
               }}
             />
           )}
         </Stack>
         {isActive && (
-          <IconButton size="small" onClick={onDeactivate} sx={{ p: 0.5 }}>
+          <IconButton size="small" onClick={onDeactivate} sx={{ p: 0.5, ml: 0.5, flexShrink: 0 }}>
             <CloseIcon sx={{ fontSize: 16, color: '#999' }} />
           </IconButton>
         )}
