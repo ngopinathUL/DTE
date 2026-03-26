@@ -89,15 +89,19 @@ function LegendSwatch({
   fill,
   label,
   isDash,
+  isDashFill,
 }: {
   color: string;
   fill?: string;
   label: string;
   isDash?: boolean;
+  isDashFill?: boolean;
 }) {
   return (
     <Stack direction="row" alignItems="center" spacing={0.5}>
-      {isDash ? (
+      {isDashFill ? (
+        <Box sx={{ width: 24, height: 10, bgcolor: fill || 'transparent', borderTop: `3px dashed ${color}`, borderRadius: '2px' }} />
+      ) : isDash ? (
         <Box sx={{ width: 18, height: 0, borderTop: `2px solid ${color}` }} />
       ) : (
         <Box
@@ -206,7 +210,7 @@ export default function ProgressionChart({
         name: id,
         data: twinSeries[id],
         color: isSelected ? SELECTED_COLOR : hasSel ? TWIN_LINE_FADED : strataColor,
-        lineWidth: isSelected ? 2.5 : 1.5,
+        lineWidth: isSelected ? 2.5 : 1.2,
         marker: {
           enabled: isSelected,
           radius: isSelected ? 5 : 0,
@@ -236,13 +240,15 @@ export default function ProgressionChart({
       name: 'Population avg',
       data: popMean,
       color: POPULATION_COLOR,
-      lineWidth: 2.5,
+      lineWidth: 3,
+      dashStyle: 'ShortDash',
       marker: {
         enabled: true,
+        symbol: 'diamond',
         radius: 5,
         fillColor: '#fff',
         lineColor: POPULATION_COLOR,
-        lineWidth: 2,
+        lineWidth: 2.5,
       },
       zIndex: 5,
     });
@@ -383,7 +389,7 @@ export default function ProgressionChart({
 
       {/* Legend */}
       <Stack direction="row" spacing={2.5} sx={{ mb: 1, flexWrap: 'wrap' }}>
-        <LegendSwatch color={POPULATION_COLOR} fill={POPULATION_BAND_COLOR} label="Population ± SD" />
+        <LegendSwatch color={POPULATION_COLOR} fill={POPULATION_BAND_COLOR} isDashFill label="Population ± SD" />
         <LegendSwatch color={SELECTED_COLOR} fill={SELECTED_BAND_COLOR} label="Selected ± SD" />
         {selectedStrata.map((s) => (
           <LegendSwatch key={s} color={STRATA_COLORS[s]?.line || '#999'} isDash label={s} />

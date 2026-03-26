@@ -29,9 +29,9 @@ export const SERIES_COLORS = [
 ];
 
 export const SELECTED_COLOR = '#CC3700';
-export const POPULATION_COLOR = '#2802A1';
-export const POPULATION_BAND_COLOR = 'rgba(40, 2, 161, 0.12)';
-export const SELECTED_BAND_COLOR = 'rgba(204, 55, 0, 0.15)';
+export const POPULATION_COLOR = '#1a1a1a';
+export const POPULATION_BAND_COLOR = 'rgba(0, 0, 0, 0.08)';
+export const SELECTED_BAND_COLOR = 'rgba(204, 55, 0, 0.22)';
 export const TWIN_LINE_COLOR = '#C4B5A8';
 export const TWIN_LINE_FADED = 'rgba(200, 200, 200, 0.35)';
 
