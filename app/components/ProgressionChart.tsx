@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { useCallback, useMemo, useState } from 'react';
 import { Paper, Typography, Box, Stack } from '@mui/material';
+import HighchartsWrapper from './HighchartsWrapper';
 import {
   RAW_DATA,
   TIME_POINTS,
@@ -32,7 +31,6 @@ function computeStats(
   endpoint: string,
   subjectIds: string[],
 ) {
-  // Get baselines (first timepoint per subject)
   const baselines: Record<string, number> = {};
   subjectIds.forEach((id) => {
     const first = data.find(
@@ -41,7 +39,6 @@ function computeStats(
     if (first) baselines[id] = first[endpoint as keyof TwinRecord] as number;
   });
 
-  // Per-subject change-from-baseline series
   const twinSeries: Record<string, [number, number][]> = {};
   subjectIds.forEach((id) => {
     twinSeries[id] = TIME_POINTS.map((day) => {
@@ -53,7 +50,6 @@ function computeStats(
     });
   });
 
-  // Population mean + SD per timepoint
   const popMean: [number, number][] = [];
   const popBand: [number, number, number][] = [];
   TIME_POINTS.forEach((day) => {
@@ -125,7 +121,6 @@ export default function ProgressionChart({
   subjectIds,
   strataFilter,
 }: ProgressionChartProps) {
-  const chartRef = useRef<HighchartsReact.RefObject>(null);
   const [selectedTwin, setSelectedTwin] = useState<string | null>(null);
 
   const filteredIds = useMemo(() => {
@@ -141,7 +136,6 @@ export default function ProgressionChart({
     [endpoint, filteredIds],
   );
 
-  // Compute selected twin's prediction band
   const selectedBand = useMemo(() => {
     if (!selectedTwin || !twinSeries[selectedTwin]) return null;
     const sdByDay: Record<number, number> = {};
@@ -161,8 +155,8 @@ export default function ProgressionChart({
     [],
   );
 
-  const options: Highcharts.Options = useMemo(() => {
-    const series: Highcharts.SeriesOptionsType[] = [];
+  const options = useMemo(() => {
+    const series: Record<string, unknown>[] = [];
 
     // Population SD band
     series.push({
@@ -281,7 +275,7 @@ export default function ProgressionChart({
         tickPositions: TIME_POINTS,
         labels: {
           formatter: function () {
-            return dayToMonthLabel(this.value as number);
+            return dayToMonthLabel((this as unknown as { value: number }).value);
           },
           style: {
             color: '#666',
@@ -333,7 +327,8 @@ export default function ProgressionChart({
           fontFamily: 'Roboto Flex, sans-serif',
         },
         formatter: function () {
-          const day = this.x as number;
+          const point = this as unknown as { x: number; y: number; series: { name: string } };
+          const day = point.x;
           const label = dayToMonthLabel(day);
           const popPt = popMean.find((p) => p[0] === day);
           let html = `<div style="border-left: 8px solid #A98EF9; padding: 8px 12px;">`;
@@ -343,10 +338,10 @@ export default function ProgressionChart({
             html += `<span style="width:10px;height:10px;background:${POPULATION_BAND_COLOR};border:2px solid ${POPULATION_COLOR};display:inline-block"></span>`;
             html += `Population avg: ${popPt[1].toFixed(2)}</div>`;
           }
-          if (this.series.name.startsWith('SUBJ-')) {
+          if (point.series.name.startsWith('SUBJ-')) {
             html += `<div style="display:flex;align-items:center;gap:6px">`;
             html += `<span style="width:10px;height:10px;background:${SELECTED_BAND_COLOR};border:2px solid ${SELECTED_COLOR};display:inline-block"></span>`;
-            html += `${this.series.name}: ${(this.y as number).toFixed(2)}</div>`;
+            html += `${point.series.name}: ${point.y.toFixed(2)}</div>`;
           }
           html += `</div>`;
           return html;
@@ -386,7 +381,6 @@ export default function ProgressionChart({
         {subtitle}
       </Typography>
 
-      {/* Legend */}
       <Stack direction="row" spacing={2.5} sx={{ mb: 1, flexWrap: 'wrap' }}>
         <LegendItem
           color={POPULATION_COLOR}
@@ -401,11 +395,7 @@ export default function ProgressionChart({
         />
       </Stack>
 
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={options}
-        ref={chartRef}
-      />
+      <HighchartsWrapper options={options} />
 
       <Typography sx={{ fontSize: 12, color: '#aaa', mt: 1 }}>
         {selectedTwin
