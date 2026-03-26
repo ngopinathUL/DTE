@@ -359,95 +359,71 @@ export default function ProgressionChart({
 
   return (
     <Paper elevation={0} sx={{ p: 3, mb: 3, bgcolor: charts.backgroundColorInCard }}>
-      {/* Header row: title + controls */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
-          Disease progression
-        </Typography>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
-          {/* View mode toggle */}
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            size="small"
-            onChange={(_, val) => { if (val && !disabled) setInternalViewMode(val); }}
-            sx={{
-              '& .MuiToggleButton-root': {
-                textTransform: 'none',
-                fontSize: 12,
-                fontFamily: 'Roboto Mono, monospace',
-                fontWeight: 500,
-                px: 1.5,
-                py: 0.5,
-                color: '#888',
-                borderColor: '#ddd',
-                '&.Mui-selected': {
-                  bgcolor: '#F2F0EB',
-                  color: '#262626',
-                  fontWeight: 600,
-                  borderColor: '#ccc',
-                },
-                '&.Mui-disabled': {
-                  opacity: 0.5,
-                },
-              },
-            }}
+      {/* Title */}
+      <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626', mb: 1.5 }}>
+        Disease progression
+      </Typography>
+
+      {/* Controls — all in one row */}
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+        <Autocomplete
+          multiple
+          value={disabled && lockedSubjects ? lockedSubjects : selectedSubjects}
+          onChange={(_, val) => { if (!disabled && val.length <= 15) setSelectedSubjects(val); }}
+          options={filteredIds}
+          getOptionLabel={(id) => `${id} (${getSubjectStrata(id)})`}
+          disabled={disabled}
+          size="small"
+          limitTags={2}
+          sx={{ minWidth: 240, maxWidth: 360 }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Subjects"
+              placeholder={highlighted.size === 0 ? 'Select twins...' : ''}
+              InputLabelProps={{ ...params.InputLabelProps, sx: { fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 } }}
+              sx={{ '& .MuiInputBase-root': { bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 13 } }}
+            />
+          )}
+        />
+
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          size="small"
+          onChange={(_, val) => { if (val && !disabled) setInternalViewMode(val); }}
+          sx={{
+            '& .MuiToggleButton-root': {
+              textTransform: 'none', fontSize: 12, fontFamily: 'Roboto Mono, monospace',
+              fontWeight: 500, px: 1.5, py: 0.5, color: '#888', borderColor: '#ddd',
+              '&.Mui-selected': { bgcolor: '#F2F0EB', color: '#262626', fontWeight: 600, borderColor: '#ccc' },
+              '&.Mui-disabled': { opacity: 0.5 },
+            },
+          }}
+        >
+          <ToggleButton value="change" disabled={disabled}>Change from baseline</ToggleButton>
+          <ToggleButton value="absolute" disabled={disabled}>Absolute values</ToggleButton>
+        </ToggleButtonGroup>
+
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 }}>
+            Endpoint
+          </InputLabel>
+          <Select
+            value={endpoint}
+            label="Endpoint"
+            disabled={disabled}
+            onChange={(e: SelectChangeEvent) => setInternalEndpoint(e.target.value)}
+            sx={{ bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 14 }}
           >
-            <ToggleButton value="change" disabled={disabled}>
-              Change from baseline
-            </ToggleButton>
-            <ToggleButton value="absolute" disabled={disabled}>
-              Absolute values
-            </ToggleButton>
-          </ToggleButtonGroup>
+            {Object.entries(ENDPOINTS).map(([key, label]) => (
+              <MenuItem key={key} value={key}>{label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 }}>
-              Endpoint
-            </InputLabel>
-            <Select
-              value={endpoint}
-              label="Endpoint"
-              disabled={disabled}
-              onChange={(e: SelectChangeEvent) => setInternalEndpoint(e.target.value)}
-              sx={{ bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 14 }}
-            >
-              {Object.entries(ENDPOINTS).map(([key, label]) => (
-                <MenuItem key={key} value={key}>{label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
-        </Stack>
+        <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
       </Stack>
-
-      {/* Subject selector */}
-      <Autocomplete
-        multiple
-        value={disabled && lockedSubjects ? lockedSubjects : selectedSubjects}
-        onChange={(_, val) => { if (!disabled && val.length <= 15) setSelectedSubjects(val); }}
-        options={filteredIds}
-        getOptionLabel={(id) => `${id} (${getSubjectStrata(id)})`}
-        disabled={disabled}
-        size="small"
-        limitTags={3}
-        sx={{ mb: 1.5, maxWidth: 480 }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Subjects"
-            placeholder={highlighted.size === 0 ? 'Select twins to highlight...' : ''}
-            InputLabelProps={{ ...params.InputLabelProps, sx: { fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 } }}
-            sx={{ '& .MuiInputBase-root': { bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 13 } }}
-          />
-        )}
-      />
 
       {/* Legend */}
       <Stack direction="row" spacing={2.5} sx={{ mb: 1, flexWrap: 'wrap' }}>
