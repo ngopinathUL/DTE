@@ -1,62 +1,55 @@
 'use client';
 
-import * as Highcharts from 'highcharts';
-import highchartsMore from 'highcharts/highcharts-more';
-import { HighchartsReact } from 'highcharts-react-official';
-import { useEffect, useRef, useState } from 'react';
-
-if (typeof window !== 'undefined') {
-  highchartsMore(Highcharts);
-}
+import { useEffect, useRef } from 'react';
 
 interface Props {
-  options: Highcharts.Options;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: any;
 }
 
 export default function HighchartsChart({ options }: Props) {
-  const chartRef = useRef<HighchartsReact.RefObject>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hcRef = useRef<any>(null);
 
-  // Wait until the wrapper has a non-zero width before rendering the chart
+  // Load Highcharts on mount
   useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-
-    if (el.offsetWidth > 0) {
-      setReady(true);
-      return;
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width > 0) {
-          setReady(true);
-          observer.disconnect();
+    let cancelled = false;
+    (async () => {
+      const hcMod = await import('highcharts');
+      const Highcharts = hcMod.default || hcMod;
+      const moreMod = await import('highcharts/highcharts-more');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const more: any = moreMod.default || moreMod;
+      more(Highcharts);
+      if (!cancelled) {
+        hcRef.current = Highcharts;
+        if (containerRef.current) {
+          chartRef.current = Highcharts.chart(containerRef.current, options);
         }
       }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
+    })();
+    return () => {
+      cancelled = true;
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  // Only run on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reflow when options change (e.g., endpoint/strata switch)
+  // Update chart when options change (after initial mount)
   useEffect(() => {
-    if (ready && chartRef.current?.chart) {
-      chartRef.current.chart.reflow();
+    if (chartRef.current && hcRef.current) {
+      chartRef.current.destroy();
+      chartRef.current = hcRef.current.chart(containerRef.current, options);
     }
-  }, [ready, options]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options]);
 
-  return (
-    <div ref={wrapperRef} style={{ width: '100%', minHeight: 420 }}>
-      {ready && (
-        <HighchartsReact
-          highcharts={Highcharts}
-          options={options}
-          ref={chartRef}
-          containerProps={{ style: { width: '100%', height: '420px' } }}
-        />
-      )}
-    </div>
-  );
+  return <div ref={containerRef} style={{ width: '100%', minHeight: 420 }} />;
 }

@@ -1,20 +1,12 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import {
-  Paper, Typography, Box, Stack, CircularProgress,
+  Paper, Typography, Box, Stack,
   FormControl, InputLabel, Select, MenuItem, SelectChangeEvent,
+  ToggleButtonGroup, ToggleButton,
 } from '@mui/material';
-
-const HighchartsChart = dynamic(() => import('./HighchartsChart'), {
-  ssr: false,
-  loading: () => (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 420 }}>
-      <CircularProgress size={32} />
-    </div>
-  ),
-});
+import HighchartsChart from './HighchartsChart';
 import StrataToggle from './StrataToggle';
 import {
   RAW_DATA,
@@ -38,6 +30,7 @@ interface ProgressionChartProps {
   selectedStrata: string[];
   onStrataChange: (next: string[]) => void;
   lockedEndpoint?: string;
+  lockedViewMode?: 'change' | 'absolute';
   disabled?: boolean;
 }
 
@@ -50,6 +43,7 @@ function computeStats(
   data: TwinRecord[],
   endpoint: string,
   subjectIds: string[],
+  mode: 'change' | 'absolute',
 ) {
   const baselines: Record<string, number> = {};
   subjectIds.forEach((id) => {
@@ -66,7 +60,7 @@ function computeStats(
         (d) => d.subject_id === id && d.nominal_study_day === day,
       );
       const val = rec ? (rec[endpoint as keyof TwinRecord] as number) : 0;
-      return [day, val - (baselines[id] || 0)];
+      return [day, mode === 'absolute' ? val : val - (baselines[id] || 0)];
     });
   });
 
@@ -130,19 +124,23 @@ export default function ProgressionChart({
   selectedStrata,
   onStrataChange,
   lockedEndpoint,
+  lockedViewMode,
   disabled,
 }: ProgressionChartProps) {
   const [internalEndpoint, setInternalEndpoint] = useState<string>('cuhdrs');
-  const endpoint = lockedEndpoint || internalEndpoint;
+  const [internalViewMode, setInternalViewMode] = useState<'change' | 'absolute'>('change');
   const [selectedTwin, setSelectedTwin] = useState<string | null>(null);
+
+  const endpoint = lockedEndpoint || internalEndpoint;
+  const viewMode = disabled && lockedViewMode ? lockedViewMode : internalViewMode;
 
   const filteredIds = useMemo(() => {
     return subjectIds.filter((id) => selectedStrata.includes(getSubjectStrata(id)));
   }, [subjectIds, selectedStrata]);
 
   const { twinSeries, popMean, popBand } = useMemo(
-    () => computeStats(RAW_DATA, endpoint, filteredIds),
-    [endpoint, filteredIds],
+    () => computeStats(RAW_DATA, endpoint, filteredIds, viewMode),
+    [endpoint, filteredIds, viewMode],
   );
 
   const selectedBand = useMemo(() => {
@@ -163,6 +161,10 @@ export default function ProgressionChart({
     },
     [],
   );
+
+  const yAxisLabel = viewMode === 'absolute'
+    ? `${ENDPOINTS[endpoint]}`
+    : `Change from baseline (${ENDPOINTS[endpoint]})`;
 
   const options = useMemo(() => {
     const series: Record<string, unknown>[] = [];
@@ -267,7 +269,7 @@ export default function ProgressionChart({
         gridLineWidth: 0,
       },
       yAxis: {
-        title: { text: `Change from baseline (${ENDPOINTS[endpoint]})`, style: { color: '#262626', fontSize: '14px', fontFamily: 'Roboto Flex, sans-serif' } },
+        title: { text: yAxisLabel, style: { color: '#262626', fontSize: '14px', fontFamily: 'Roboto Flex, sans-serif' } },
         labels: { style: { color: '#666', fontSize: '12px', fontFamily: 'Roboto Mono, monospace', fontWeight: '500' } },
         gridLineColor: charts.gridLineColor,
         lineColor: charts.axisLineColor,
@@ -307,7 +309,7 @@ export default function ProgressionChart({
       plotOptions: { series: { animation: { duration: 300 }, turboThreshold: 0 } },
       series,
     };
-  }, [filteredIds, twinSeries, popMean, popBand, selectedTwin, selectedBand, handlePointClick]);
+  }, [filteredIds, twinSeries, popMean, popBand, selectedTwin, selectedBand, handlePointClick, yAxisLabel]);
 
   return (
     <Paper elevation={0} sx={{ p: 3, mb: 3, bgcolor: charts.backgroundColorInCard }}>
@@ -323,6 +325,42 @@ export default function ProgressionChart({
           Disease progression
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
+          {/* View mode toggle */}
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            size="small"
+            onChange={(_, val) => { if (val && !disabled) setInternalViewMode(val); }}
+            sx={{
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                fontSize: 12,
+                fontFamily: 'Roboto Mono, monospace',
+                fontWeight: 500,
+                px: 1.5,
+                py: 0.5,
+                color: '#888',
+                borderColor: '#ddd',
+                '&.Mui-selected': {
+                  bgcolor: '#F2F0EB',
+                  color: '#262626',
+                  fontWeight: 600,
+                  borderColor: '#ccc',
+                },
+                '&.Mui-disabled': {
+                  opacity: 0.5,
+                },
+              },
+            }}
+          >
+            <ToggleButton value="change" disabled={disabled}>
+              Change from baseline
+            </ToggleButton>
+            <ToggleButton value="absolute" disabled={disabled}>
+              Absolute values
+            </ToggleButton>
+          </ToggleButtonGroup>
+
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <InputLabel sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 }}>
               Endpoint
@@ -352,7 +390,7 @@ export default function ProgressionChart({
         ))}
       </Stack>
 
-      <HighchartsChart options={options as unknown as import('highcharts').Options} />
+      <HighchartsChart options={options} />
 
       <Typography sx={{ fontSize: 12, color: '#aaa', mt: 1 }}>
         {selectedTwin

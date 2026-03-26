@@ -13,23 +13,23 @@ import {
 } from '../data/digitalTwinData';
 
 interface Props {
-  /** When set, overrides and locks chart/table controls */
   lockedEndpoint?: string | null;
   lockedChartStrata?: string[] | null;
   lockedTableStrata?: string[] | null;
+  lockedViewMode?: 'change' | 'absolute' | null;
 }
 
 export default function DiseaseProgressionExplorer({
   lockedEndpoint,
   lockedChartStrata,
   lockedTableStrata,
+  lockedViewMode,
 }: Props) {
   const [chartStrata, setChartStrata] = useState<string[]>([...STRATA]);
   const [tableStrata, setTableStrata] = useState<string[]>([...STRATA]);
 
   const isLocked = lockedEndpoint != null;
 
-  // When locked, override local state
   const effectiveChartStrata = isLocked && lockedChartStrata ? lockedChartStrata : chartStrata;
   const effectiveTableStrata = isLocked && lockedTableStrata ? lockedTableStrata : tableStrata;
 
@@ -55,6 +55,7 @@ export default function DiseaseProgressionExplorer({
         selectedStrata={effectiveChartStrata}
         onStrataChange={isLocked ? () => {} : setChartStrata}
         lockedEndpoint={lockedEndpoint || undefined}
+        lockedViewMode={lockedViewMode || undefined}
         disabled={isLocked}
       />
 

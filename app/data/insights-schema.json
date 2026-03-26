@@ -108,6 +108,12 @@
             "type": "string"
           },
           "description": "Which strata to activate in the table's strata toggle. If omitted, defaults to the same as chart_strata."
+        },
+        "view_mode": {
+          "type": "string",
+          "enum": ["change", "absolute"],
+          "default": "change",
+          "description": "Chart y-axis mode. 'change' shows change from baseline (default). 'absolute' shows raw endpoint values — use this when the insight depends on baseline separation (e.g., bimodal distributions)."
         }
       }
     }

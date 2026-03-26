@@ -4,6 +4,8 @@ export interface InsightBinding {
   endpoint: string;
   chart_strata: string[];
   table_strata?: string[];
+  /** "change" (default) or "absolute" — controls y-axis mode */
+  view_mode?: 'change' | 'absolute';
 }
 
 export interface Insight {
@@ -43,5 +45,6 @@ export function normalizeBinding(binding: InsightBinding) {
     endpoint: binding.endpoint,
     chartStrata: binding.chart_strata,
     tableStrata: binding.table_strata || binding.chart_strata,
+    viewMode: (binding.view_mode || 'change') as 'change' | 'absolute',
   };
 }

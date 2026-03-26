@@ -29,7 +29,8 @@
       "binding": {
         "endpoint": "uhdrs_tms_total_score",
         "chart_strata": ["Stage I", "Stage II", "Stage III"],
-        "table_strata": ["Stage I"]
+        "table_strata": ["Stage I"],
+        "view_mode": "absolute"
       }
     },
     {
