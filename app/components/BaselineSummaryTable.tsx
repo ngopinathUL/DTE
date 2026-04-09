@@ -21,12 +21,12 @@ import {
   Chip,
   SelectChangeEvent,
   IconButton,
-  Stepper,
-  Step,
-  StepButton,
+  Box,
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import StrataToggle from './StrataToggle';
 import {
   RAW_DATA,
@@ -34,7 +34,6 @@ import {
   ENDPOINTS,
   SUBJECT_IDS,
   TwinRecord,
-  dayToMonthLabel,
 } from '../data/digitalTwinData';
 import { charts, STRATA_COLORS } from '../theme/colors';
 
@@ -242,119 +241,100 @@ export default function BaselineSummaryTable({
 
   return (
     <Paper elevation={0} sx={{ mb: 3, bgcolor: charts.backgroundColorInCard }}>
-      {/* Header */}
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ px: 3, pt: 3, pb: 1 }}
-      >
-        <div>
-          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
-            Summary Statistics at {selectedDay === 0 ? 'Baseline' : `${selectedDay} Days`}
-          </Typography>
-          <Typography
-            sx={{ fontSize: 13, color: '#888', pt: 0.5, fontFamily: 'Roboto Flex, sans-serif' }}
-          >
-            {totalN} subjects
-          </Typography>
-        </div>
+      {/* Header row: title + timepoint stepper + controls */}
+      <Stack spacing={1} sx={{ px: 3, pt: 2.5, pb: 1.5 }}>
+        <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
+          Summary Statistics at
+        </Typography>
 
-        <Stack direction="row" spacing={3} alignItems="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 220 }}>
-            <InputLabel sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 }}>
-              Endpoints
-            </InputLabel>
-            <Select
-              multiple
-              disabled={disabled}
-              value={selectedEndpoints}
-              label="Endpoints"
-              onChange={handleEndpointChange}
-              input={<OutlinedInput label="Endpoints" />}
-              renderValue={(selected) => (
-                <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-                  {selected.map((k) => (
-                    <Chip
-                      key={k}
-                      label={ENDPOINTS[k]}
-                      size="small"
-                      sx={{ height: 20, fontSize: 11, fontFamily: 'Roboto Flex, sans-serif' }}
-                    />
-                  ))}
-                </Stack>
-              )}
-              sx={{ bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 14 }}
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+          justifyContent="space-between"
+          spacing={2}
+        >
+          {/* Timepoint stepper: left arrow | value box | right arrow */}
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <IconButton
+              size="small"
+              disabled={activeStep === 0}
+              onClick={() => setActiveStep((s) => s - 1)}
+              sx={{ color: '#262626', '&.Mui-disabled': { color: '#ccc' } }}
             >
-              {allEndpointKeys.map((key) => (
-                <MenuItem key={key} value={key}>
-                  <Checkbox checked={selectedEndpoints.includes(key)} size="small" />
-                  <ListItemText
-                    primary={ENDPOINTS[key]}
-                    primaryTypographyProps={{ fontSize: 13, fontFamily: 'Roboto Flex, sans-serif' }}
-                  />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
+              <ChevronLeftIcon />
+            </IconButton>
+            <Box
+              sx={{
+                minWidth: 120,
+                textAlign: 'center',
+                px: 2,
+                py: 0.75,
+                borderRadius: 2,
+                bgcolor: '#262626',
+                color: '#fff',
+                fontFamily: 'Roboto Mono, monospace',
+                fontSize: 13,
+                fontWeight: 700,
+                userSelect: 'none',
+              }}
+            >
+              {selectedDay === 0 ? 'Baseline' : `Day ${selectedDay}`}
+            </Box>
+            <IconButton
+              size="small"
+              disabled={activeStep === TIME_POINTS.length - 1}
+              onClick={() => setActiveStep((s) => s + 1)}
+              sx={{ color: '#262626', '&.Mui-disabled': { color: '#ccc' } }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+            <Typography sx={{ fontSize: 12, color: '#888', ml: 1, fontFamily: 'Roboto Mono, monospace' }}>
+              {totalN} subjects
+            </Typography>
+          </Stack>
+
+          {/* Endpoints + strata controls */}
+          <Stack direction="row" spacing={3} alignItems="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 220 }}>
+              <InputLabel sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: 12, fontWeight: 500 }}>
+                Endpoints
+              </InputLabel>
+              <Select
+                multiple
+                disabled={disabled}
+                value={selectedEndpoints}
+                label="Endpoints"
+                onChange={handleEndpointChange}
+                input={<OutlinedInput label="Endpoints" />}
+                renderValue={(selected) => (
+                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                    {selected.map((k) => (
+                      <Chip
+                        key={k}
+                        label={ENDPOINTS[k]}
+                        size="small"
+                        sx={{ height: 20, fontSize: 11, fontFamily: 'Roboto Flex, sans-serif' }}
+                      />
+                    ))}
+                  </Stack>
+                )}
+                sx={{ bgcolor: '#fff', borderRadius: 2, fontFamily: 'Roboto Flex, sans-serif', fontSize: 14 }}
+              >
+                {allEndpointKeys.map((key) => (
+                  <MenuItem key={key} value={key}>
+                    <Checkbox checked={selectedEndpoints.includes(key)} size="small" />
+                    <ListItemText
+                      primary={ENDPOINTS[key]}
+                      primaryTypographyProps={{ fontSize: 13, fontFamily: 'Roboto Flex, sans-serif' }}
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
+          </Stack>
         </Stack>
       </Stack>
-
-      {/* Timepoint stepper */}
-      <Stepper
-        nonLinear
-        activeStep={activeStep}
-        sx={{
-          px: 3,
-          pb: 2,
-          pt: 1,
-          '& .MuiStepConnector-line': { borderColor: '#EEEBE4' },
-        }}
-      >
-        {TIME_POINTS.map((day, index) => {
-          const label = dayToMonthLabel(day);
-          const isActive = index === activeStep;
-          return (
-            <Step key={day} completed={false}>
-              <StepButton
-                onClick={() => setActiveStep(index)}
-                icon={
-                  <Stack
-                    alignItems="center"
-                    justifyContent="center"
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      bgcolor: isActive ? '#262626' : '#F5F4F0',
-                      color: isActive ? '#fff' : '#888',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      fontFamily: 'Roboto Mono, monospace',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {label}
-                  </Stack>
-                }
-                sx={{
-                  '& .MuiStepLabel-label': {
-                    fontSize: 11,
-                    fontFamily: 'Roboto Mono, monospace',
-                    color: isActive ? '#262626' : '#aaa',
-                    fontWeight: isActive ? 700 : 400,
-                    mt: 0.5,
-                  },
-                }}
-              >
-                {selectedDay === 0 && isActive ? 'Baseline' : `Day ${day}`}
-              </StepButton>
-            </Step>
-          );
-        })}
-      </Stepper>
 
       <TableContainer sx={{ mt: 1 }}>
         <Table size="small">
