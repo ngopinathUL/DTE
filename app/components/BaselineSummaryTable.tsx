@@ -21,6 +21,9 @@ import {
   Chip,
   SelectChangeEvent,
   IconButton,
+  Stepper,
+  Step,
+  StepButton,
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -31,6 +34,7 @@ import {
   ENDPOINTS,
   SUBJECT_IDS,
   TwinRecord,
+  dayToMonthLabel,
 } from '../data/digitalTwinData';
 import { charts, STRATA_COLORS } from '../theme/colors';
 
@@ -49,16 +53,16 @@ interface EndpointStats {
   max: number;
 }
 
-function computeBaselineStats(
+function computeStatsAtDay(
   data: TwinRecord[],
   endpointKey: string,
   subjectIds: string[],
+  day: number,
 ): EndpointStats {
-  const baselineDay = TIME_POINTS[0];
   const values = subjectIds
     .map((id) => {
       const rec = data.find(
-        (d) => d.subject_id === id && d.nominal_study_day === baselineDay,
+        (d) => d.subject_id === id && d.nominal_study_day === day,
       );
       return rec ? (rec[endpointKey as keyof TwinRecord] as number) : null;
     })
@@ -191,6 +195,8 @@ export default function BaselineSummaryTable({
 }: BaselineSummaryTableProps) {
   const allEndpointKeys = Object.keys(ENDPOINTS);
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>(allEndpointKeys);
+  const [activeStep, setActiveStep] = useState(0);
+  const selectedDay = TIME_POINTS[activeStep];
 
   const handleEndpointChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
@@ -207,7 +213,7 @@ export default function BaselineSummaryTable({
     });
     result['Overall'] = {};
     for (const key of selectedEndpoints) {
-      result['Overall'][key] = computeBaselineStats(RAW_DATA, key, overallIds);
+      result['Overall'][key] = computeStatsAtDay(RAW_DATA, key, overallIds, selectedDay);
     }
 
     for (const strata of selectedStrata) {
@@ -217,12 +223,12 @@ export default function BaselineSummaryTable({
       });
       result[strata] = {};
       for (const key of selectedEndpoints) {
-        result[strata][key] = computeBaselineStats(RAW_DATA, key, ids);
+        result[strata][key] = computeStatsAtDay(RAW_DATA, key, ids, selectedDay);
       }
     }
 
     return result;
-  }, [selectedStrata, selectedEndpoints]);
+  }, [selectedStrata, selectedEndpoints, selectedDay]);
 
   const strataGroups = useMemo(() => {
     const groups = ['Overall'];
@@ -246,12 +252,12 @@ export default function BaselineSummaryTable({
       >
         <div>
           <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#262626' }}>
-            Summary statistics
+            Summary Statistics at {selectedDay === 0 ? 'Baseline' : `${selectedDay} Days`}
           </Typography>
           <Typography
             sx={{ fontSize: 13, color: '#888', pt: 0.5, fontFamily: 'Roboto Flex, sans-serif' }}
           >
-            First observed timepoint (Day {TIME_POINTS[0]}) &mdash; {totalN} subjects
+            {totalN} subjects
           </Typography>
         </div>
 
@@ -295,6 +301,60 @@ export default function BaselineSummaryTable({
           <StrataToggle selectedStrata={selectedStrata} onChange={onStrataChange} disabled={disabled} />
         </Stack>
       </Stack>
+
+      {/* Timepoint stepper */}
+      <Stepper
+        nonLinear
+        activeStep={activeStep}
+        sx={{
+          px: 3,
+          pb: 2,
+          pt: 1,
+          '& .MuiStepConnector-line': { borderColor: '#EEEBE4' },
+        }}
+      >
+        {TIME_POINTS.map((day, index) => {
+          const label = dayToMonthLabel(day);
+          const isActive = index === activeStep;
+          return (
+            <Step key={day} completed={false}>
+              <StepButton
+                onClick={() => setActiveStep(index)}
+                icon={
+                  <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      bgcolor: isActive ? '#262626' : '#F5F4F0',
+                      color: isActive ? '#fff' : '#888',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: 'Roboto Mono, monospace',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {label}
+                  </Stack>
+                }
+                sx={{
+                  '& .MuiStepLabel-label': {
+                    fontSize: 11,
+                    fontFamily: 'Roboto Mono, monospace',
+                    color: isActive ? '#262626' : '#aaa',
+                    fontWeight: isActive ? 700 : 400,
+                    mt: 0.5,
+                  },
+                }}
+              >
+                {selectedDay === 0 && isActive ? 'Baseline' : `Day ${day}`}
+              </StepButton>
+            </Step>
+          );
+        })}
+      </Stepper>
 
       <TableContainer sx={{ mt: 1 }}>
         <Table size="small">
